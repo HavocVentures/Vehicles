@@ -1,0 +1,271 @@
+/* The shared Vehicles view keeps its command surface independent of the host shell. */
+.vehicles-app {
+  --veh-accent: #0f6cbd;
+  --veh-accent-hover: #115ea3;
+  --veh-ink: #242424;
+  --veh-muted: #565b60;
+  --veh-line: #d1d5d9;
+  --veh-rule: #e4e7e9;
+  --veh-surface: #fff;
+  --veh-surface-alt: #f5f7f9;
+  container-type: inline-size;
+  min-width: 0;
+  color: var(--veh-ink);
+  font: 400 1rem/1.45 "Segoe UI", Inter, Arial, sans-serif;
+  color-scheme: light;
+}
+
+.vehicles-app :is(h1, h2, h3, legend) {
+  margin: 0;
+  color: var(--veh-ink);
+  font-family: inherit;
+  font-weight: 650;
+  letter-spacing: -0.018em;
+}
+.vehicles-app h1 { font-size: clamp(1.8rem, 5cqi, 2.35rem); line-height: 1.15; }
+.vehicles-app h2 { font-size: 1.25rem; line-height: 1.3; }
+.vehicles-app h3 { font-size: 1.05rem; }
+.vehicles-app p { color: inherit; line-height: 1.5; }
+.vehicles-app small { color: var(--veh-muted); font-size: .86rem; }
+.vehicles-app a { color: var(--veh-accent-hover); text-underline-offset: .16em; }
+.vehicles-app :is(button, input, select, textarea) {
+  font-family: inherit;
+  font-size: .96rem;
+  line-height: 1.4;
+}
+.vehicles-app button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: .45rem;
+  min-height: 2.15rem;
+  padding: .3rem .8rem;
+  border: 1px solid var(--veh-line);
+  border-radius: .35rem;
+  background: var(--veh-surface);
+  color: var(--veh-ink);
+  font-weight: 600;
+  cursor: pointer;
+}
+.vehicles-app button:hover:not(:disabled) { border-color: #acb2b7; background: #f2f4f5; }
+.vehicles-app button:active:not(:disabled) { background: #e7ebed; }
+.vehicles-app button:disabled { opacity: .57; cursor: default; }
+.vehicles-app :is(.veh-primary, button[data-primary="true"]) {
+  color: #fff;
+  border-color: var(--veh-accent);
+  background: var(--veh-accent);
+}
+.vehicles-app :is(.veh-primary, button[data-primary="true"]):hover:not(:disabled) {
+  color: #fff;
+  border-color: var(--veh-accent-hover);
+  background: var(--veh-accent-hover);
+}
+.vehicles-app :focus-visible {
+  outline: 2px solid var(--veh-accent);
+  outline-offset: 2px;
+}
+
+.vehicles-app .veh-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  height: auto;
+  min-height: 3.4rem;
+  margin: 0 0 1rem;
+  padding: 0;
+  border: 0;
+  background: transparent;
+}
+.vehicles-app .veh-ribbon {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0;
+  margin-bottom: 1.3rem;
+  border: 1px solid var(--veh-line);
+  border-radius: .55rem;
+  background: var(--veh-surface);
+  box-shadow: 0 1px 2px #2537460f;
+}
+.vehicles-app .veh-tabs {
+  display: flex;
+  align-items: stretch;
+  gap: .2rem;
+  width: 100%;
+  padding: .12rem .55rem 0;
+  border-bottom: 1px solid var(--veh-rule);
+}
+.vehicles-app .veh-tabs button {
+  position: relative;
+  min-height: 2.55rem;
+  border: 0;
+  border-radius: .2rem .2rem 0 0;
+  padding-inline: .75rem;
+  background: transparent;
+  font-weight: 500;
+}
+.vehicles-app .veh-tabs button:is([aria-selected="true"], [aria-current="page"], .active) {
+  color: #0e507e;
+  font-weight: 650;
+}
+.vehicles-app .veh-tabs button:is([aria-selected="true"], [aria-current="page"], .active)::after {
+  position: absolute;
+  inset: auto .7rem 0;
+  height: 3px;
+  border-radius: 3px 3px 0 0;
+  background: var(--veh-accent);
+  content: "";
+}
+.vehicles-app .veh-commands,
+.vehicles-app .veh-actions {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: .5rem;
+}
+.vehicles-app .veh-commands {
+  width: 100%;
+  padding: .65rem .8rem;
+}
+.vehicles-app .veh-mobile-menu { display: none; }
+.vehicles-app .veh-panel,
+.vehicles-app .veh-empty,
+.vehicles-app .veh-review {
+  margin-block: 1rem;
+  padding: clamp(.9rem, 2.5cqi, 1.4rem);
+  border: 1px solid var(--veh-line);
+  border-radius: .6rem;
+  background: var(--veh-surface);
+}
+.vehicles-app :is(.veh-panel, .veh-review, .veh-empty) > :first-child { margin-top: 0; }
+.vehicles-app :is(.veh-panel, .veh-review, .veh-empty) > :last-child { margin-bottom: 0; }
+.vehicles-app .veh-empty { display: grid; justify-items: start; gap: .6rem; }
+.vehicles-app .veh-register {
+  width: 100%;
+  border: 1px solid var(--veh-line);
+  border-collapse: separate;
+  border-spacing: 0;
+  border-radius: .5rem;
+  background: var(--veh-surface);
+  font-variant-numeric: tabular-nums;
+}
+.vehicles-app .veh-register :is(th, td) {
+  padding: .75rem .65rem;
+  vertical-align: middle;
+  text-align: left;
+  overflow-wrap: anywhere;
+}
+.vehicles-app .veh-register th {
+  color: #42484d;
+  background: var(--veh-surface-alt);
+  font-size: .91rem;
+  font-weight: 600;
+}
+.vehicles-app .veh-register thead th:first-child { border-radius: .48rem 0 0; }
+.vehicles-app .veh-register thead th:last-child { border-radius: 0 .48rem 0 0; }
+.vehicles-app .veh-register tbody td { border-top: 1px solid var(--veh-rule); }
+.vehicles-app .veh-register tbody tr:focus-within,
+.vehicles-app .veh-register tbody tr:hover { background: #f4f8fc; }
+.vehicles-app .veh-register button:not(.veh-primary) {
+  justify-content: start;
+  min-height: unset;
+  padding: .25rem 0;
+  border: 0;
+  background: transparent;
+  color: var(--veh-accent-hover);
+  text-align: left;
+}
+.vehicles-app .veh-register button:not(.veh-primary):hover { text-decoration: underline; }
+.vehicles-app .veh-status {
+  display: inline-flex;
+  align-items: center;
+  width: fit-content;
+  max-width: 100%;
+  gap: .4rem;
+  padding: .21rem .6rem;
+  border-radius: 1rem;
+  background: #edf0f2;
+  color: #454c52;
+  font-weight: 650;
+  font-size: .88rem;
+  line-height: 1.25;
+}
+.vehicles-app .veh-status[data-state="ready" i] { background: #e4f3e7; color: #16522b; }
+.vehicles-app .veh-status[data-state="check" i] { background: #e9f1ff; color: #234f85; }
+.vehicles-app .veh-status[data-state="caution" i] { background: #fff0c5; color: #704a00; }
+.vehicles-app .veh-status[data-state="grounded" i] { background: #fce8e8; color: #9c2726; }
+
+.vehicles-app .veh-form,
+.vehicles-app .veh-field,
+.vehicles-app .veh-review { display: grid; gap: .7rem; }
+.vehicles-app .veh-grid {
+  display: grid;
+  gap: .85rem 1.15rem;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 14rem), 1fr));
+}
+.vehicles-app label { color: var(--veh-ink); font-weight: 600; }
+.vehicles-app label:not(.veh-mobile-menu):has(> :is(input, textarea, select):not([type="checkbox"], [type="radio"])) {
+  display: grid;
+  align-content: start;
+  gap: .3rem;
+}
+.vehicles-app :is(input, textarea, select):not([type="checkbox"], [type="radio"]) {
+  min-width: 0;
+  max-width: 100%;
+  border: 1px solid var(--veh-line);
+  border-bottom-color: #81868a;
+  border-radius: .35rem;
+  padding: .42rem .55rem;
+  background-color: var(--veh-surface);
+  color: var(--veh-ink);
+}
+.vehicles-app textarea { min-height: 4.7rem; resize: vertical; }
+.vehicles-app :is(input[type="checkbox"], input[type="radio"]) { width: 1.1rem; height: 1.1rem; accent-color: var(--veh-accent); }
+.vehicles-app .veh-history { display: grid; gap: .7rem; margin: .7rem 0; padding: 0; }
+.vehicles-app .veh-history > li { list-style: none; padding: .3rem 0 .6rem; border-bottom: 1px solid var(--veh-rule); }
+.vehicles-app .veh-history > li:last-child { border: 0; }
+.vehicles-app fieldset { min-width: 0; margin: 0; padding: .75rem 1rem; border: 1px solid var(--veh-line); border-radius: .4rem; }
+.vehicles-app [role="alert"] { color: #922626; }
+
+@container (max-width: 44rem) {
+  .vehicles-app .veh-header { align-items: flex-start; flex-wrap: wrap; gap: .5rem; }
+  .vehicles-app .veh-tabs { display: none; }
+  .vehicles-app .veh-ribbon { align-items: center; gap: .5rem; padding: .6rem; }
+  .vehicles-app .veh-mobile-menu { display: inline-flex; align-items: center; gap: .4rem; }
+  .vehicles-app .veh-commands { width: auto; padding: 0; flex: 1 1 auto; }
+  .vehicles-app .veh-commands button,
+  .vehicles-app .veh-mobile-menu select { min-height: 2.65rem; }
+  .vehicles-app .veh-register:has(td[data-label]) {
+    display: block;
+    border: 0;
+    background: transparent;
+    box-shadow: none;
+  }
+  .vehicles-app .veh-register:has(td[data-label]) thead {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    margin: -1px;
+    padding: 0;
+    overflow: hidden;
+    clip-path: inset(50%);
+  }
+  .vehicles-app .veh-register:has(td[data-label]) tbody { display: grid; gap: .8rem; }
+  .vehicles-app .veh-register tr:has(td[data-label]) {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: .4rem .8rem;
+    padding: .8rem;
+    border: 1px solid var(--veh-line);
+    border-radius: .5rem;
+    background: var(--veh-surface);
+  }
+  .vehicles-app .veh-register td[data-label] { display: grid; align-content: start; align-items: start; gap: .2rem; padding: .15rem 0; border: 0; }
+  .vehicles-app .veh-register td[data-label]::before { content: attr(data-label); color: var(--veh-muted); font-size: .86rem; }
+  .vehicles-app .veh-register td[data-label]:first-child,
+  .vehicles-app .veh-register td[data-label]:last-child { grid-column: 1 / -1; }
+}
+@media (forced-colors: active) {
+  .vehicles-app .veh-status { border: 1px solid CanvasText; }
+  .vehicles-app .veh-tabs button[aria-selected="true"] { border-bottom: 3px solid Highlight; }
+}
