@@ -9,6 +9,67 @@ type Mode='list'|'detail'|'add'|'capture'|'fault'|'hold'|'release';
 const included:Record<Section,string[]>={Home:[],Registration:['payment','expiry','renewal'],Maintenance:['fault','hold','release','repair','followup'],Servicing:['service','meter']};
 function Status({vehicle}:{vehicle:Vehicle}){return <span className="veh-status" data-state={vehicle.state}>{stateNames[vehicle.state]}</span>}
 
+const meterNumber = new Intl.NumberFormat('en-AU', {maximumFractionDigits: 2});
+
+function vehicleRecordsLabel(filename: string, kinds: string[]) {
+  if (filename !== 'Vehicle note.txt' || !kinds.length) return filename;
+  if (kinds.every(kind => included.Registration.includes(kind))) return 'Registration note';
+  if (kinds.includes('service')) return 'Service note';
+  if (kinds.every(kind => included.Maintenance.includes(kind))) return 'Maintenance note';
+  return 'Vehicle note';
+}
+
+type RecordsProps = {
+  vehicle: Vehicle;
+  section: Section;
+  api: Transport;
+  canEdit: boolean;
+  onReview: (evidence: Evidence) => void;
+};
+
+function VehicleRecords({vehicle, section, api, canEdit, onReview}: RecordsProps) {
+  const history = vehicle.history.filter(entry => section === 'Home' || included[section].includes(entry.kind)).reverse();
+  const labels = new Map(vehicle.files.map(file => {
+    const kinds = vehicle.history.filter(entry => entry.source === file.id).map(entry => entry.kind);
+    return [file.id, vehicleRecordsLabel(file.name, kinds)];
+  }));
+  const title = section === 'Home' ? 'Vehicle history' : section + ' history';
+  const actionNames: Record<string, string> = {...categories, hold: 'Do not use', release: 'Returned to service'};
+
+  return <>
+    <section className="veh-panel veh-history">
+      <h2>{title}</h2>
+      {history.length ? <table className="veh-ledger" aria-label={title}>
+        <thead><tr><th scope="col">Date</th><th scope="col">Entry</th><th scope="col">Evidence</th></tr></thead>
+        <tbody>{history.map(entry => {
+          const day = entry.day || entry.at;
+          const detail = [actionNames[entry.kind] || entry.kind, money(entry.amount),
+            entry.reading && meterNumber.format(Number(entry.reading)) + ' ' + entry.unit].filter(Boolean).join(' · ');
+          return <tr key={entry.id}>
+            <td className="veh-entry-date"><time dateTime={day?.slice(0, 10)}>{showDate(day)}</time></td>
+            <td className="veh-entry-detail"><strong>{entry.label}</strong><small>{detail}</small></td>
+            <td className="veh-entry-source">{entry.source &&
+              <a href={api.file(entry.source)} aria-label={'Open original evidence for ' + entry.label}>
+                {labels.get(entry.source) || 'Open original'}
+              </a>}</td>
+          </tr>;
+        })}</tbody>
+      </table> : <p>No entries recorded.</p>}
+    </section>
+    <section className="veh-panel">
+      <h2>Original evidence</h2>
+      {vehicle.files.map(file => {
+        const evidence = vehicle.evidence.find(item => item.id === file.id);
+        return <p key={file.id}><a href={api.file(file.id)} title={file.name}>{labels.get(file.id)}</a>{' '}
+          {evidence && evidence.status !== 'confirmed' && canEdit &&
+            <button onClick={() => onReview(evidence)}><ClipboardList size={15}/>Review</button>}
+        </p>;
+      })}
+      {!vehicle.files.length && <p>No originals saved.</p>}
+    </section>
+  </>;
+}
+
 export function Vehicles({api,canEdit,email,shared}:{api:Transport;canEdit:boolean;email:string;shared:boolean}){
  const [data,setData]=useState<Register|null>(null),[error,setError]=useState(''),[busy,setBusy]=useState(false),[section,setSection]=useState<Section>('Home'),[mode,setMode]=useState<Mode>('list'),[id,setId]=useState(''),[source,setSource]=useState<Evidence>(),[reason,setReason]=useState('');
  const vehicle=data?.vehicles.find(v=>v.id===id);const [capturePending,setCapturePending]=useState(false);
@@ -46,9 +107,9 @@ export function Vehicles({api,canEdit,email,shared}:{api:Transport;canEdit:boole
  {['release','hold','fault'].includes(mode)&&<form className="veh-panel veh-form" onSubmit={e=>{e.preventDefault();void run(async()=>{await api.action(vehicle.id,mode,{reason,revision:vehicle.revision,request:actionId.current});await refresh();setMode('detail')})}}><h2>{mode==='release'?'Return to service':mode==='hold'?'Mark do not use':'Report a fault'}</h2>
  <label>{mode==='release'?'Reason for release and work verified':'What happened?'}<textarea required maxLength={600} value={reason} onChange={e=>setReason(e.target.value)}/></label>
  <div className="veh-actions"><button className="veh-primary" disabled={busy}>{mode==='release'?'Confirm return to service':mode==='hold'?'Confirm do not use':'Save fault'}</button><button type="button" onClick={()=>setMode('detail')}>Cancel</button></div></form>}
- {mode==='detail'&&<>{(section==='Home'||section==='Servicing')&&<section className="veh-panel"><h2>Servicing</h2><p>{vehicle.service?vehicle.service.label+' · '+showDate(vehicle.service.day):'No service recorded.'}</p>{vehicle.service&&(vehicle.service.nextDay||vehicle.service.nextReading)&&<p>Next service {vehicle.service.nextDay&&'by '+showDate(vehicle.service.nextDay)} {vehicle.service.nextReading&&'at '+vehicle.service.nextReading+' '+vehicle.service.unit}</p>}{Object.values(vehicle.meters).map(m=><p key={m.unit}>Last observed {m.reading} {m.unit} on {showDate(m.day)}</p>)}</section>}
+ {mode==='detail'&&<>{(section==='Home'||section==='Servicing')&&<section className="veh-panel"><h2>Servicing</h2><p>{vehicle.service?vehicle.service.label.replace(/[.]$/, '')+' · '+showDate(vehicle.service.day):'No service recorded.'}</p>{vehicle.service&&(vehicle.service.nextDay||vehicle.service.nextReading)&&<p>Next service due {[vehicle.service.nextDay&&'by '+showDate(vehicle.service.nextDay),vehicle.service.nextReading&&'at '+meterNumber.format(Number(vehicle.service.nextReading))+' '+vehicle.service.unit].filter(Boolean).join(' or ')}{vehicle.service.nextDay&&vehicle.service.nextReading?', whichever comes first':''}</p>}{Object.values(vehicle.meters).map(m=><p key={m.unit}>Last observed {meterNumber.format(Number(m.reading))} {m.unit} on {showDate(m.day)}</p>)}</section>}
  {section==='Home'&&vehicle.open.length>0&&<section className="veh-panel"><h2>Open actions</h2><ul>{vehicle.open.map(e=><li key={e.id}>{e.label}{e.nextDay?' · Due '+showDate(e.nextDay):''}{e.nextReading?' · Due at '+e.nextReading+' '+e.unit:''}</li>)}</ul></section>}
- <section className="veh-panel veh-history"><h2>{section==='Home'?'Vehicle history':section+' history'}</h2>{vehicle.history.filter(e=>section==='Home'||included[section].includes(e.kind)).reverse().map(e=><article key={e.id}><strong>{e.label}</strong><div>{(categories as Record<string,string>)[e.kind]||e.kind} · {showDate(e.day||e.at)} {money(e.amount)} {e.reading&&e.reading+' '+e.unit}</div>{e.source&&<a href={api.file(e.source)}>View original</a>}</article>)}{!vehicle.history.some(e=>section==='Home'||included[section].includes(e.kind))&&<p>No entries recorded.</p>}</section>
- <section className="veh-panel"><h2>Original evidence</h2>{vehicle.files.map(f=>{const e=vehicle.evidence.find(i=>i.id===f.id);return <p key={f.id}><a href={api.file(f.id)}>{f.name}</a> {e&&e.status!=='confirmed'&&canEdit&&<button onClick={()=>{setSource(e);setMode('capture')}}><ClipboardList size={15}/>Review</button>}</p>})}{!vehicle.files.length&&<p>No originals saved.</p>}</section></>}</>}</div>
+ <VehicleRecords vehicle={vehicle} section={section} api={api} canEdit={canEdit}
+   onReview={evidence=>{setSource(evidence);setMode('capture')}}/></>}</>}</div>
 }
 
